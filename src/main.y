@@ -5,6 +5,42 @@
 int yylex();
 void yyerror(const char *s);
 
+int num_variables = 0;
+char variable_keys[100][100];
+int variable_values[100];
+int getVariableIndex(char key[]){
+    for(int i=0;i<num_variables;i++){
+        if(strcmp(variable_keys[i], key) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+void assignVariable(char key[], int value){
+    int index = getVariableIndex(key);
+    if(index == -1){
+        strcpy(variable_keys[num_variables], key);
+        variable_values[num_variables] = value;
+        num_variables++;
+    } else {
+        variable_values[index] = value;
+    }
+}
+int getVariable(char key[]){
+    int index = getVariableIndex(key);
+    if(index == -1){
+        return -1;
+    } else {
+        return variable_values[index];
+    }
+}
+void printVariableTable() {
+    printf("VARIABLE TABLE\n");
+    for(int i=0;i<num_variables;i++){
+        printf("%s: %d\n", variable_keys[i], variable_values[i]); 
+    }
+}
+
 typedef struct ListNode {
     int val;
     struct ListNode *next;
@@ -18,7 +54,6 @@ ListNode* createNode(int data) {
     temp->prev = temp;
     return temp;
 }
-
 void insertEnd(ListNode** head, int data){
     // printf("INSERT HEAD = %d \n", (*head)->val);
     ListNode* newNode = createNode(data);
@@ -174,7 +209,7 @@ OR_OP   :   '(' or expr exprs ')'   {insertEnd(&$4, $3); $$ = iterativeOr(&$4);}
 NOT_OP  :   '(' not expr ')'    {if($3 == 0) {$$ = 1;} else if($3 == 1){$$ = 0;} else {yyerror("Type error!");}}
         ;
 
-def_stmt:   '(' define VARIABLE expr ')'  {printf("DEFINE %s %d", $3, $4);}
+def_stmt:   '(' define VARIABLE expr ')'  {assignVariable($3, $4); }
         ;
 
 VARIABLE:   ID  {char* temp = malloc(sizeof($1)); sprintf(temp, "%s", $1); $$ = temp;}
@@ -225,6 +260,7 @@ expr    :   NUM_OP      {$$ = $1;}
         |   FUN_expr    {}
         |   FUN_Call    {}
         |   IF_expr     {$$ = $1;}
+        |   VARIABLE    {$$ = getVariable($1);}
         |   number      {$$ = $1;}
         |   bool_val    {$$ = $1;}
         ;
