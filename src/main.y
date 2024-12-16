@@ -2,128 +2,105 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+// define type table
+#define False 0
+#define True 1
+
+#define DEBUG_MODE 1
+#define BOOL_TYPE 0
+#define INT_TYPE 1
+#define STR_TYPE 2
+#define PRINT_NUM_TYPE 3
+#define PRINT_BOOL_TYPE 4
+#define NOT_TYPE 5
+#define PLUS_TYPE 6
+#define MINUS_TYPE 7
+#define MULTIPLY_TYPE 8
+#define DIVIDE_TYPE 9
+#define MOD_TYPE 10
+#define EMPTY_TYPE 11
+#define GREATER_TYPE 12
+#define SMALLER_TYPE 13
+#define EQUAL_TYPE 14
+
+
+
 int yylex();
 void yyerror(const char *s);
 
-int num_variables = 0;
-char variable_keys[100][100];
-int variable_values[100];
-int getVariableIndex(char key[]){
-    for(int i=0;i<num_variables;i++){
-        if(strcmp(variable_keys[i], key) == 0){
-            return i;
-        }
-    }
-    return -1;
-}
-void assignVariable(char key[], int value){
-    int index = getVariableIndex(key);
-    if(index == -1){
-        strcpy(variable_keys[num_variables], key);
-        variable_values[num_variables] = value;
-        num_variables++;
-    } else {
-        variable_values[index] = value;
-    }
-}
-int getVariable(char key[]){
-    int index = getVariableIndex(key);
-    if(index == -1){
-        return -1;
-    } else {
-        return variable_values[index];
-    }
-}
-void printVariableTable() {
-    printf("VARIABLE TABLE\n");
-    for(int i=0;i<num_variables;i++){
-        printf("%s: %d\n", variable_keys[i], variable_values[i]); 
-    }
-}
+typedef struct Element {
+    int type;
+    char* cval;
+    int ival;
+} Element;
 
-typedef struct ListNode {
-    int val;
-    struct ListNode *next;
-    struct ListNode *prev;
-} ListNode;
-
-ListNode* createNode(int data) {
-    ListNode *temp = (ListNode*)malloc(sizeof(ListNode));
-    temp->val = data;
-    temp->next = temp;
-    temp->prev = temp;
+Element* newElement(int type, char* cval, int ival){
+    Element* temp = (Element *)malloc(sizeof(Element));
+    temp->type = type;
+    if(type == BOOL_TYPE || type == INT_TYPE){
+        temp->ival = ival;
+    } else {
+        temp->cval = cval;
+    }
     return temp;
 }
-void insertEnd(ListNode** head, int data){
-    // printf("INSERT HEAD = %d \n", (*head)->val);
-    ListNode* newNode = createNode(data);
-    ListNode** tail = &((*head)->prev);
-    (*tail)->next = newNode;
-    (*head)->prev = newNode;
-    newNode->next = *head;
-    newNode->prev = *tail;
+
+typedef struct Node {
+    Element* val; 
+    struct Node* left;
+    struct Node* right;
+} Node;
+
+Node* root;
+
+Node* newNode(Element* val, Node* left, Node* right) {
+    Node* temp = (Node *)malloc(sizeof(Node));
+    temp->val = val;
+    temp->left = left;
+    temp->right = right;
+    return temp;
 }
 
-int iterativeSum(ListNode** head){
-    int sum = 0;
-    ListNode* temp = *head;
-    //printf("START SUM");
-    do {
-        //printf("%d", temp->val);
-        sum += temp->val;
-        temp = temp->next;
-    }while(temp != *head);
-    return sum;
-}
-int iterativeProduct(ListNode** head){
-    int product = 1;
-    ListNode* temp = *head;
-    do {
-        product *= temp->val;
-        temp = temp->next;
-    }while(temp != *head);
-    return product;
-}
-int iterativeEqual(ListNode** head){
-    ListNode* temp = *head;
-    do {
-       if(temp->val != temp->next->val){
-            return 0;
-       }
-       temp = temp->next;
-    }while(temp != *head);
-    return 1;
-}
-int iterativeAnd(ListNode** head){
-    ListNode* temp = *head;
-    do {
-        if(temp->val != 1){
-            return 0;
-        }
-        temp = temp->next;
-    }while(temp != *head);
-    return 1;
-}
-int iterativeOr(ListNode** head){
-    ListNode* temp = *head;
-    do {
-        if(temp->val == 1){
-            return 1;
-        }
-        temp = temp->next;
-    }while(temp != *head);
-    return 0;
+void eval(Node* node, int type) {
+    if(DEBUG_MODE) {
+        printf("<--EVAL-->\n");
+    }
+    if(node == NULL)  {
+        return;
+    }
+
+    switch(node->val->type){
+        case EMPTY_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            break;
+        case PRINT_NUM_TYPE:
+            eval(node->left, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            printf("%d\n", node->left->val->ival);
+            break;
+        case PRINT_BOOL_TYPE:
+            eval(node->left, node->val->type);
+            if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
+            if(node->left->val == 0) printf("#f\n");
+            else if(node->left->val == 1) printf("#t\n");
+            else {
+               yyerror("BOOL Error");
+            }
+            break;
+    }
+
+
 }
 %}
 %union {
     char* str;
     int num;
-    int* pNum;
-    struct ListNode* List;
+    struct Node* node;
 }
-%token  <num>   number
-%token  <str>   ID
-%token  <num>   bool_val
+%token  number
+%token  bool_val
+%token  ID
 %token  and 
 %token  or
 %token  not
@@ -132,43 +109,61 @@ int iterativeOr(ListNode** head){
 %token  print_num
 %token  print_bool
 %token  IF
+%type <num> number
+%type <num> bool_val
+%type <str> ID
 
 
-%type   <List>  exprs
-%type   <num>   expr
-%type   <num>   NUM_OP
-%type   <num>   LOGICAL_OP
-%type   <num>   IF_expr
-%type   <num>   TEST_expr
-%type   <num>   THEN_expr
-%type   <num>   ELSE_expr
-%type   <num>   AND_OP
-%type   <num>   OR_OP
-%type   <num>   NOT_OP
-%type   <num>   DIVIDE
-%type   <num>   MULTIPLY
-%type   <num>   EQUAL
-%type   <num>   MINUS
-%type   <num>   MODULUS
-%type   <num>   GREATER
-%type   <num>   SMALLER
-%type   <num>   PLUS
-%type   <str>   print_stmt
-%type   <str>   VARIABLE
+%type <node> program
+%type <node> stmts
+%type <node> stmt
+%type <node> expr
+%type <node> print_stmt
+%type <node> def_stmt
+%type <node> NUM_OP
+%type <node> LOGICAL_OP
+%type <node> NOT_OP
+%type <node> OR_OP
+%type <node> AND_OP
+%type <node> FUN_expr
+%type <node> FUN_Call
+%type <node> IF_expr
+%type <node> VARIABLE
+%type <node> PLUS
+%type <node> MINUS
+%type <node> MULTIPLY
+%type <node> DIVIDE
+%type <node> MODULUS
+%type <node> GREATER
+%type <node> SMALLER
+%type <node> EQUAL
 
-%left '+' '-'
-%left '*' '/'
 %%
-program :   program stmt
-        |   stmt
-        ;
-stmt    :   expr        {printf("EXPR %d", $1);}
-        |   def_stmt    {}
-        |   print_stmt  {printf("%s", $1);}
+program :   stmts   {root = $1;}
         ;
 
-print_stmt  :   '(' print_bool expr ')'  {if($3 == 0)$$ = "false"; if($3 == 1)$$ = "true";}
-            |   '(' print_num expr ')' {char *temp = malloc(12*sizeof(char)); if(temp==NULL){yyerror("Fail to allocate memory");} sprintf(temp, "%d", $3); $$ = temp;}
+stmts   :   stmts stmt  {$$ = newNode(newElement(EMPTY_TYPE, NULL,0), $1, $2);}
+        |   stmt        {$$ = $1;}
+        ;
+
+stmt    :   expr        {$$ = $1;}
+        |   def_stmt    {$$ = $1;}
+        |   print_stmt  {$$ = $1;}
+        ;
+
+expr    :   NUM_OP      {$$ = $1;}
+        |   LOGICAL_OP  {$$ = $1;}
+        |   FUN_expr    {$$ = $1;}
+        |   FUN_Call    {$$ = $1;}
+        |   IF_expr     {$$ = $1;}
+        |   VARIABLE    {$$ = $1;}
+        |   number      {$$ = newNode(newElement(INT_TYPE, NULL, $1), NULL, NULL);}
+        |   bool_val    {$$ = newNode(newElement(BOOL_TYPE, NULL, $1),NULL,NULL);}
+        ;
+
+
+print_stmt  :   '(' print_bool expr ')'  {$$ = newNode(newElement(PRINT_BOOL_TYPE, NULL,0), $3, NULL);}
+            |   '(' print_num expr ')' {$$ = newNode(newElement(PRINT_NUM_TYPE, NULL, 0), $3, NULL);}
             ;
 
 NUM_OP  :   PLUS        {$$ = $1;}
@@ -181,38 +176,38 @@ NUM_OP  :   PLUS        {$$ = $1;}
         |   EQUAL       {$$ = $1;}
         ;
 
-PLUS    :   '(' '+' expr exprs ')'  {$$ = $3 + iterativeSum(&$4);}
+PLUS    :   '(' '+' expr exprs ')'  {}
         ;
-MINUS   :   '(' '-' expr expr ')'   {$$ = $3 - $4;}
+MINUS   :   '(' '-' expr expr ')'   {$$ = newNode(newElement(MINUS_TYPE, NULL, 0), $3, $4);}
         ;
-MULTIPLY:   '(' '*' expr exprs ')'  {$$ = $3 * iterativeProduct(&$4);}
+MULTIPLY:   '(' '*' expr exprs ')'  {}
         ;
-DIVIDE  :   '(' '/' expr expr ')'   {$$ = $3 / $4;}
+DIVIDE  :   '(' '/' expr expr ')'   {$$ = newNode(newElement(DIVIDE_TYPE, NULL, 0), $3, $4);}
         ;
-MODULUS :   '(' mod expr expr ')'   {$$ = $3 % $4;}
+MODULUS :   '(' mod expr expr ')'   {$$ = newNode(newElement(MOD_TYPE, NULL, 0), $3, $4);}
         ;
-GREATER :   '(' '>' expr expr ')'   {$$ = $3 > $4;}
+GREATER :   '(' '>' expr expr ')'   {$$ = newNode(newElement(GREATER_TYPE, NULL, 0), $3, $4);}
         ;
-SMALLER :   '(' '<' expr expr ')'   {$$ = $3 < $4;}
+SMALLER :   '(' '<' expr expr ')'   {$$ = newNode(newElement(SMALLER_TYPE, NULL, 0), $3, $4);}
         ;
-EQUAL   :   '(' '=' expr exprs ')'  {insertEnd(&$4, $3);$$ = iterativeEqual(&$4);}
+EQUAL   :   '(' '=' expr exprs ')'  {}
         ;
 
-LOGICAL_OP: AND_OP  {$$ = $1;}
-          | OR_OP   {$$ = $1;}    
+LOGICAL_OP: AND_OP  {}
+          | OR_OP   {}    
           | NOT_OP  {$$ = $1;}
           ;
-AND_OP  :   '(' and expr exprs ')'  {insertEnd(&$4, $3); $$ = iterativeAnd(&$4);}
+AND_OP  :   '(' and expr exprs ')'  {}
         ;
-OR_OP   :   '(' or expr exprs ')'   {insertEnd(&$4, $3); $$ = iterativeOr(&$4);} 
+OR_OP   :   '(' or expr exprs ')'   {} 
         ;
-NOT_OP  :   '(' not expr ')'    {if($3 == 0) {$$ = 1;} else if($3 == 1){$$ = 0;} else {yyerror("Type error!");}}
-        ;
-
-def_stmt:   '(' define VARIABLE expr ')'  {assignVariable($3, $4); }
+NOT_OP  :   '(' not expr ')'    {$$ = newNode(newElement(NOT_TYPE, NULL, 0), $3, NULL);}
         ;
 
-VARIABLE:   ID  {char* temp = malloc(sizeof($1)); sprintf(temp, "%s", $1); $$ = temp;}
+def_stmt:   '(' define VARIABLE expr ')'  {}
+        ;
+
+VARIABLE:   ID  {$$ = newNode(newElement(STR_TYPE, $1, 0), NULL, NULL);}
         ;
 
 FUN_expr:   '(' FUN_IDs FUN_Body ')'
@@ -233,36 +228,20 @@ PARAM   :   expr
         ;
 FUN_Name:   ID
         ;
-IF_expr :  '(' IF TEST_expr THEN_expr ELSE_expr ')' {if($3 == 1){$$ = $4;} else {$$ = $5;}}
+IF_expr :  '(' IF TEST_expr THEN_expr ELSE_expr ')' {}
         ;
-TEST_expr:  expr    {$$ = $1;}
+TEST_expr:  expr    {}
          ;
-THEN_expr:  expr    {$$ = $1;}
+THEN_expr:  expr    {}
          ;
-ELSE_expr:  expr    {$$ = $1;}
+ELSE_expr:  expr    {}
          ;
 IDs     :   /* empty */
         |   IDs ID
         ;
 
-exprs   :   exprs expr  {
-                insertEnd(&$1, $2)  ;
-                $$ = $1;
-            }
-        |   expr        {
-                ListNode* head = createNode($1);
-                $$ = head;
-            }
-        ;
-
-expr    :   NUM_OP      {$$ = $1;}
-        |   LOGICAL_OP  {$$ = $1;}
-        |   FUN_expr    {}
-        |   FUN_Call    {}
-        |   IF_expr     {$$ = $1;}
-        |   VARIABLE    {$$ = getVariable($1);}
-        |   number      {$$ = $1;}
-        |   bool_val    {$$ = $1;}
+exprs   :   exprs expr  {}  
+        |   expr        {}
         ;
 
 
@@ -272,6 +251,7 @@ void yyerror(const char *s) {
     exit(0);
 }
 int main() {
-    yyparse();
+    yyparse(); 
+    eval(root, EMPTY_TYPE);
     return 0;
 }

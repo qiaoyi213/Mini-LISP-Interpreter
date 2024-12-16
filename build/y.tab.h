@@ -55,8 +55,8 @@ extern int yydebug;
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     number = 258,                  /* number  */
-    ID = 259,                      /* ID  */
-    bool_val = 260,                /* bool_val  */
+    bool_val = 259,                /* bool_val  */
+    ID = 260,                      /* ID  */
     and = 261,                     /* and  */
     or = 262,                      /* or  */
     not = 263,                     /* not  */
@@ -74,8 +74,8 @@ extern int yydebug;
 #define YYerror 256
 #define YYUNDEF 257
 #define number 258
-#define ID 259
-#define bool_val 260
+#define bool_val 259
+#define ID 260
 #define and 261
 #define or 262
 #define not 263
@@ -89,14 +89,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 118 "src/main.y"
+#line 96 "src/main.y"
 
     char* str;
     int num;
-    int* pNum;
-    struct ListNode* List;
+    struct Node* node;
 
-#line 100 "y.tab.h"
+#line 99 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
