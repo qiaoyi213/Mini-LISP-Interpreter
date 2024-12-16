@@ -18,9 +18,14 @@ digit       [0-9]
 "define"        {return(define);}
 "("             {return('(');}
 ")"             {return(')');}
+"+"             {return('+');}
+"-"             {return('-');}
+"*"             {return('*');}
+"/"             {return('/');}
+"="             {return('=');}
 "0"|[1-9]{digit}*|-[1-9]{digit}*        {yylval.num = atoi(yytext); return(number);}
 {letter}({letter}|{digit}|'-')*          {yylval.str = yytext; return(ID);}
-"#t"|"#f"                          { if(yytext[1] == 'f')yylval.num=0; if(yytext[0]== 't')yylval.num=1; return(bool_val);}
+"#t"|"#f"                          { if(yytext[1] == 'f')yylval.num=0; if(yytext[1]== 't')yylval.num=1; return(bool_val);}
 
 . ;
 %%

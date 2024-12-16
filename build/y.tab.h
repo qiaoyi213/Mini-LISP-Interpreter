@@ -89,12 +89,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 8 "src/main.y"
+#line 83 "src/main.y"
 
     char* str;
     int num;
+    int* pNum;
+    struct ListNode* List;
 
-#line 98 "y.tab.h"
+#line 100 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
