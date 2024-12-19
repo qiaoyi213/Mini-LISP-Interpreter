@@ -7,6 +7,7 @@
 #define True 1
 
 #define DEBUG_MODE 1
+
 #define BOOL_TYPE 0
 #define INT_TYPE 1
 #define STR_TYPE 2
@@ -22,7 +23,10 @@
 #define GREATER_TYPE 12
 #define SMALLER_TYPE 13
 #define EQUAL_TYPE 14
-
+#define EXPRS_TYPE 15
+#define AND_TYPE 16
+#define OR_TYPE 17
+#define DEFINE_TYPE 18
 
 
 int yylex();
@@ -68,7 +72,12 @@ void eval(Node* node, int type) {
     if(node == NULL)  {
         return;
     }
-
+    if(node->val->type == EXPRS_TYPE){
+        if(DEBUG_MODE){
+            printf("EXPRS, TYPE:%d\n", type);
+        }
+        node->val->type = type;
+    }
     switch(node->val->type){
         case EMPTY_TYPE:
             eval(node->left, node->val->type);
@@ -82,14 +91,82 @@ void eval(Node* node, int type) {
         case PRINT_BOOL_TYPE:
             eval(node->left, node->val->type);
             if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
-            if(node->left->val == 0) printf("#f\n");
-            else if(node->left->val == 1) printf("#t\n");
+            if(node->left->val->ival == 0) printf("#f\n");
+            else if(node->left->val->ival == 1) printf("#t\n");
             else {
                yyerror("BOOL Error");
             }
             break;
-    }
+        case PLUS_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival + node->right->val->ival;
+            node->val->type = INT_TYPE;
+            if(DEBUG_MODE) {
+                printf("PLUS_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case MINUS_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival - node->right->val->ival;
+            node->val->type = INT_TYPE;
+            if(DEBUG_MODE) {
+                printf("MINUS_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case MULTIPLY_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival * node->right->val->ival;
+            node->val->type = INT_TYPE;
+            if(DEBUG_MODE){
+                printf("MULTIPLY_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case DIVIDE_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival / node->right->val->ival;
+            node->val->type = INT_TYPE;
+            if(DEBUG_MODE){
+                printf("DIVIDE_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case GREATER_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival > node->right->val->ival;
+            node->val->type = BOOL_TYPE;
+            if(DEBUG_MODE){
+                printf("GREATER_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case SMALLER_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival < node->right->val->ival;
+            node->val->type = BOOL_TYPE;
+            if(DEBUG_MODE){
+                printf("SMALLER_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case EQUAL_TYPE:
+            break;
 
+    }
 
 }
 %}
@@ -118,6 +195,7 @@ void eval(Node* node, int type) {
 %type <node> stmts
 %type <node> stmt
 %type <node> expr
+%type <node> exprs
 %type <node> print_stmt
 %type <node> def_stmt
 %type <node> NUM_OP
@@ -176,11 +254,11 @@ NUM_OP  :   PLUS        {$$ = $1;}
         |   EQUAL       {$$ = $1;}
         ;
 
-PLUS    :   '(' '+' expr exprs ')'  {}
+PLUS    :   '(' '+' expr exprs ')'  {$$ = newNode(newElement(PLUS_TYPE, NULL, 0), $3, $4);}
         ;
 MINUS   :   '(' '-' expr expr ')'   {$$ = newNode(newElement(MINUS_TYPE, NULL, 0), $3, $4);}
         ;
-MULTIPLY:   '(' '*' expr exprs ')'  {}
+MULTIPLY:   '(' '*' expr exprs ')'  {$$ = newNode(newElement(MULTIPLY_TYPE, NULL, 0), $3, $4);}
         ;
 DIVIDE  :   '(' '/' expr expr ')'   {$$ = newNode(newElement(DIVIDE_TYPE, NULL, 0), $3, $4);}
         ;
@@ -190,21 +268,21 @@ GREATER :   '(' '>' expr expr ')'   {$$ = newNode(newElement(GREATER_TYPE, NULL,
         ;
 SMALLER :   '(' '<' expr expr ')'   {$$ = newNode(newElement(SMALLER_TYPE, NULL, 0), $3, $4);}
         ;
-EQUAL   :   '(' '=' expr exprs ')'  {}
+EQUAL   :   '(' '=' expr exprs ')'  {$$ = newNode(newElement(EQUAL_TYPE, NULL, 0), $3, $4);}
         ;
 
-LOGICAL_OP: AND_OP  {}
-          | OR_OP   {}    
+LOGICAL_OP: AND_OP  {$$ = $1;}
+          | OR_OP   {$$ = $1;}    
           | NOT_OP  {$$ = $1;}
           ;
-AND_OP  :   '(' and expr exprs ')'  {}
+AND_OP  :   '(' and expr exprs ')'  {$$ = newNode(newElement(AND_TYPE, NULL, 0), $3, $4);}
         ;
-OR_OP   :   '(' or expr exprs ')'   {} 
+OR_OP   :   '(' or expr exprs ')'   {$$ = newNode(newElement(OR_TYPE, NULL, 0), $3, $4);} 
         ;
 NOT_OP  :   '(' not expr ')'    {$$ = newNode(newElement(NOT_TYPE, NULL, 0), $3, NULL);}
         ;
 
-def_stmt:   '(' define VARIABLE expr ')'  {}
+def_stmt:   '(' define VARIABLE expr ')'  {$$ = newNode(newElement(DEFINE_TYPE, NULL, 0), $3, $4);}
         ;
 
 VARIABLE:   ID  {$$ = newNode(newElement(STR_TYPE, $1, 0), NULL, NULL);}
@@ -240,8 +318,8 @@ IDs     :   /* empty */
         |   IDs ID
         ;
 
-exprs   :   exprs expr  {}  
-        |   expr        {}
+exprs   :   exprs expr  {$$ = newNode(newElement(EXPRS_TYPE, NULL, 0), $1, $2);}  
+        |   expr        {$$ = $1;}
         ;
 
 
