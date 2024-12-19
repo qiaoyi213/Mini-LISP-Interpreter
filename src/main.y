@@ -165,6 +165,37 @@ void eval(Node* node, int type) {
             break;
         case EQUAL_TYPE:
             break;
+        case AND_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
+            if(node->right->val->type != BOOL_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival && node->right->val->ival;
+            node->val->type = BOOL_TYPE;
+            if(DEBUG_MODE){
+                printf("AND_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case OR_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
+            if(node->right->val->type != BOOL_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival || node->right->val->ival;
+            node->val->type = BOOL_TYPE;
+            if(DEBUG_MODE){
+                printf("OR_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case NOT_TYPE:
+            eval(node->left, node->val->type);
+            if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
+            node->val->ival = !node->left->val->ival;
+            node->val->type = BOOL_TYPE;
+            if(DEBUG_MODE){
+                printf("NOT_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
 
     }
 
