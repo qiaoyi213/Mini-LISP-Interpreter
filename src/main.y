@@ -225,9 +225,9 @@ void eval(Node* node, int type) {
     int num;
     struct Node* node;
 }
-%token  number
-%token  bool_val
-%token  ID
+%token <num> number
+%token <num> bool_val
+%token <str> ID
 %token  and 
 %token  or
 %token  not
@@ -236,9 +236,6 @@ void eval(Node* node, int type) {
 %token  print_num
 %token  print_bool
 %token  IF
-%type <num> number
-%type <num> bool_val
-%type <str> ID
 
 
 %type <node> program
