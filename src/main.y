@@ -27,7 +27,8 @@
 #define AND_TYPE 16
 #define OR_TYPE 17
 #define DEFINE_TYPE 18
-
+#define IF_TYPE 19
+#define THEN_ELSE_TYPE 20
 
 int yylex();
 void yyerror(const char *s);
@@ -196,7 +197,25 @@ void eval(Node* node, int type) {
                 printf("NOT_TYPE, VAL=%d\n", node->val->ival);
             }
             break;
-
+        case IF_TYPE:
+            eval(node->left, node->val->type);
+            if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
+            if(node->left->val->ival == 1){
+                eval(node->right->left, node->right->val->type);
+                node->val->type = node->right->left->val->type;
+                node->val->ival = node->right->left->val->ival;
+            } else {
+                eval(node->right->right, node->right->val->type);
+                node->val->type = node->right->right->val->type;
+                node->val->ival = node->right->right->val->ival;
+            }
+            if(DEBUG_MODE){
+                printf("IF_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        
+            
+            
     }
 
 }
@@ -237,6 +256,9 @@ void eval(Node* node, int type) {
 %type <node> FUN_expr
 %type <node> FUN_Call
 %type <node> IF_expr
+%type <node> TEST_expr
+%type <node> THEN_expr
+%type <node> ELSE_expr
 %type <node> VARIABLE
 %type <node> PLUS
 %type <node> MINUS
@@ -246,7 +268,6 @@ void eval(Node* node, int type) {
 %type <node> GREATER
 %type <node> SMALLER
 %type <node> EQUAL
-
 %%
 program :   stmts   {root = $1;}
         ;
@@ -337,7 +358,7 @@ PARAM   :   expr
         ;
 FUN_Name:   ID
         ;
-IF_expr :  '(' IF TEST_expr THEN_expr ELSE_expr ')' {}
+IF_expr :  '(' IF TEST_expr THEN_expr ELSE_expr ')' {Node* expr_node = newNode(newElement(THEN_ELSE_TYPE, NULL, 0), $4, $5); $$ = newNode(newElement(IF_TYPE, NULL, 0), $3, expr_node);}
         ;
 TEST_expr:  expr    {}
          ;
