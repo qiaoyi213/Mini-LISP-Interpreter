@@ -5,8 +5,9 @@
 // define type table
 #define False 0
 #define True 1
-
 #define DEBUG_MODE 1
+
+#define MAX_SIZE 9999
 
 #define BOOL_TYPE 0
 #define INT_TYPE 1
@@ -29,7 +30,8 @@
 #define DEFINE_TYPE 18
 #define IF_TYPE 19
 #define THEN_ELSE_TYPE 20
-
+#define VARIABLE_TYPE 21
+#define DEFINE_VARIABLE_TYPE 22
 int yylex();
 void yyerror(const char *s);
 
@@ -49,7 +51,6 @@ Element* newElement(int type, char* cval, int ival){
     }
     return temp;
 }
-
 typedef struct Node {
     Element* val; 
     struct Node* left;
@@ -58,12 +59,36 @@ typedef struct Node {
 
 Node* root;
 
+Node* variables[MAX_SIZE];
+int top_variables = -1;
+
+
 Node* newNode(Element* val, Node* left, Node* right) {
     Node* temp = (Node *)malloc(sizeof(Node));
     temp->val = val;
     temp->left = left;
     temp->right = right;
     return temp;
+}
+Node* copyNode(Node* node){
+    if(node == NULL) return NULL;
+   
+    Node* temp = newNode(newElement(EMPTY_TYPE, NULL, 0), NULL, NULL);
+    
+    temp->val->type = node->val->type;
+    temp->val->ival = node->val->ival;
+    temp->val->cval = node->val->cval;
+
+    temp->left = copyNode(node->left);
+    temp->right = copyNode(node->right);
+
+    return temp;
+}
+void freeNode(Node** node) {
+    if(node == NULL) return;
+    freeNode(&((*node)->left));
+    freeNode(&((*node)->right));
+    free(node);
 }
 
 void eval(Node* node, int type) {
@@ -85,6 +110,9 @@ void eval(Node* node, int type) {
             eval(node->right, node->val->type);
             break;
         case PRINT_NUM_TYPE:
+            if(DEBUG_MODE){
+                printf("PRINT_NUM\n");
+            }
             eval(node->left, node->val->type);
             if(node->left->val->type != INT_TYPE) yyerror("Type error");
             printf("%d\n", node->left->val->ival);
@@ -213,11 +241,31 @@ void eval(Node* node, int type) {
                 printf("IF_TYPE, VAL=%d\n", node->val->ival);
             }
             break;
-        
-            
-            
-    }
+        case DEFINE_VARIABLE_TYPE:
+            node->right->val->cval = node->left->val->cval;
 
+            variables[++top_variables] = copyNode(node->right);
+            if(DEBUG_MODE){
+                printf("DEFINE VARIABLE %s\n", node->left->val->cval);
+            }
+            break;
+        case VARIABLE_TYPE:
+            if(DEBUG_MODE){
+                printf("EVAL VARIABLE %s\n", node->val->cval);
+            }
+            for(int i=0;i<=top_variables;i++){
+                if(strcmp(variables[i]->val->cval,node->val->cval) == 0) {
+                    Node* temp = copyNode(variables[i]);
+                    eval(temp, node->val->type);
+                    node->val->type = temp->val->type;
+                    node->val->ival = temp->val->ival;
+                    node->val->cval = temp->val->cval;
+                    break;
+                }
+            }
+            break;
+
+    }
 }
 %}
 %union {
@@ -331,10 +379,11 @@ OR_OP   :   '(' or expr exprs ')'   {$$ = newNode(newElement(OR_TYPE, NULL, 0), 
 NOT_OP  :   '(' not expr ')'    {$$ = newNode(newElement(NOT_TYPE, NULL, 0), $3, NULL);}
         ;
 
-def_stmt:   '(' define VARIABLE expr ')'  {$$ = newNode(newElement(DEFINE_TYPE, NULL, 0), $3, $4);}
+def_stmt:   '(' define VARIABLE expr ')'  {
+                $$ = newNode(newElement(DEFINE_VARIABLE_TYPE, NULL, 0), $3, $4);
+            }
         ;
-
-VARIABLE:   ID  {$$ = newNode(newElement(STR_TYPE, $1, 0), NULL, NULL);}
+VARIABLE:   ID  {char* temp = (char *)malloc(sizeof(char*)); strcpy(temp, $1); $$ = newNode(newElement(VARIABLE_TYPE, temp, 0), NULL, NULL);}
         ;
 
 FUN_expr:   '(' FUN_IDs FUN_Body ')'

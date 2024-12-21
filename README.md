@@ -9,7 +9,7 @@ This is an mini lisp interpreter.
 - [ ] Numerical Operations Implement all numerical operations
 - [x] Logical Operations Implement all logical operations
 - [ ] if Expression Implement if expression
-- [ ] Variable Definition Able to define a variable
+- [x] Variable Definition Able to define a variable
 - [ ] Function Able to declare and call an anonymous function
 - [ ] Named Function Able to declare and call a named function
 - [ ] Recursion Support recursive function call

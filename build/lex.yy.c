@@ -703,7 +703,7 @@ YY_DECL
 		}
 
 	{
-#line 9 "src/main.l"
+#line 8 "src/main.l"
 
 
 #line 709 "lex.yy.c"
@@ -765,112 +765,112 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 11 "src/main.l"
+#line 10 "src/main.l"
 {return(print_num);}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 12 "src/main.l"
+#line 11 "src/main.l"
 {return(print_bool);}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 13 "src/main.l"
+#line 12 "src/main.l"
 {return(mod);}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 14 "src/main.l"
+#line 13 "src/main.l"
 {return(and);}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 15 "src/main.l"
+#line 14 "src/main.l"
 {return(or);}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 16 "src/main.l"
+#line 15 "src/main.l"
 {return(not);}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 17 "src/main.l"
+#line 16 "src/main.l"
 {return(IF);}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 18 "src/main.l"
+#line 17 "src/main.l"
 {return(define);}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 19 "src/main.l"
+#line 18 "src/main.l"
 {return('(');}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 20 "src/main.l"
+#line 19 "src/main.l"
 {return(')');}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 21 "src/main.l"
+#line 20 "src/main.l"
 {return('+');}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 22 "src/main.l"
+#line 21 "src/main.l"
 {return('-');}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 23 "src/main.l"
+#line 22 "src/main.l"
 {return('*');}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 24 "src/main.l"
+#line 23 "src/main.l"
 {return('/');}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 25 "src/main.l"
+#line 24 "src/main.l"
 {return('=');}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 26 "src/main.l"
+#line 25 "src/main.l"
 {return('<');}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 27 "src/main.l"
+#line 26 "src/main.l"
 {return('>');}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 28 "src/main.l"
+#line 27 "src/main.l"
 {yylval.num = atoi(yytext); return(number);}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 29 "src/main.l"
+#line 28 "src/main.l"
 {yylval.str = yytext; return(ID);}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 30 "src/main.l"
+#line 29 "src/main.l"
 { if(yytext[1] == 'f')yylval.num=0; if(yytext[1]== 't')yylval.num=1; return(bool_val);}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 32 "src/main.l"
+#line 30 "src/main.l"
 ;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 33 "src/main.l"
+#line 31 "src/main.l"
 ECHO;
 	YY_BREAK
 #line 876 "lex.yy.c"
@@ -1878,7 +1878,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 33 "src/main.l"
+#line 31 "src/main.l"
 
 
 
