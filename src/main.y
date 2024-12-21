@@ -242,9 +242,14 @@ void eval(Node* node, int type) {
             }
             break;
         case DEFINE_VARIABLE_TYPE:
+            for(int i=0;i<=top_variables;i++){
+                if(strcmp(variables[i]->val->cval, node->left->val->cval) == 0){
+                    yyerror("Variable redefinition");
+                }
+            }
             node->right->val->cval = node->left->val->cval;
-
             variables[++top_variables] = copyNode(node->right);
+            
             if(DEBUG_MODE){
                 printf("DEFINE VARIABLE %s\n", node->left->val->cval);
             }
