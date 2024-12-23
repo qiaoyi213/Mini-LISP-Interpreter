@@ -247,6 +247,43 @@ void eval(Node* node, int type) {
             }
             break;
         case EQUAL_TYPE:
+            /*
+                e.g.:
+                    (= a b c d)
+                     EQUAL
+                    a  EXPRS
+                        EXPRS d
+                        b c
+            */
+            if(DEBUG_MODE){
+                printf("EQUAL\n");
+            }
+            if(node->left->val->type == EXPRS_TYPE && node->right->val->type != EXPRS_TYPE){
+                eval(node->right, node->val->type);
+                int temp = node->right->val->ival;
+                temp = node->left->right->val->ival;
+                eval(node->left, node->val->type);
+                node->val->type = BOOL_TYPE;
+                printf("A%d, %d\n", node->right->val->ival, temp);
+                node->val->ival = (node->right->val->ival == temp) && node->left->val->ival;
+            } else if(node->left->val->type != EXPRS_TYPE && node->right->val->type == EXPRS_TYPE){
+                eval(node->left, node->val->type);
+                int temp = node->left->val->ival;
+                temp = node->right->right->val->ival;
+                eval(node->right, node->val->type);
+                node->val->type = BOOL_TYPE;
+                printf("B%d, %d\n", node->left->val->ival, temp);
+                node->val->ival = (node->left->val->ival == temp) && node->right->val->ival;
+            } else if(node->left->val->type != EXPRS_TYPE && node->right->val->type != EXPRS_TYPE){
+                eval(node->left, node->val->type);
+                eval(node->right, node->val->type);
+                node->val->type = BOOL_TYPE;
+                printf("C%d, %d\n", node->left->val->ival, node->right->val->ival);
+                node->val->ival = node->left->val->ival == node->right->val->ival;
+            } else {
+                yyerror("UNKNOWN ERROR");
+            }
+            printf("VAL=%d\n", node->val->ival);
             break;
         case AND_TYPE:
             eval(node->left, node->val->type);
