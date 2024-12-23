@@ -64,7 +64,8 @@ extern int yydebug;
     define = 265,                  /* define  */
     print_num = 266,               /* print_num  */
     print_bool = 267,              /* print_bool  */
-    IF = 268                       /* IF  */
+    IF = 268,                      /* IF  */
+    fun = 269                      /* fun  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -84,18 +85,19 @@ extern int yydebug;
 #define print_num 266
 #define print_bool 267
 #define IF 268
+#define fun 269
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 276 "src/main.y"
+#line 367 "src/main.y"
 
     char* str;
     int num;
     struct Node* node;
 
-#line 99 "y.tab.h"
+#line 101 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

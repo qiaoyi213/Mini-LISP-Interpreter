@@ -15,6 +15,7 @@ digit       [0-9]
 "not"           {return(not);}
 "if"            {return(IF);}
 "define"        {return(define);}
+"fun"           {return(fun);}
 "("             {return('(');}
 ")"             {return(')');}
 "+"             {return('+');}
