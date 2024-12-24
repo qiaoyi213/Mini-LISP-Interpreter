@@ -5,7 +5,7 @@
 // define type table
 #define False 0
 #define True 1
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 #define MAX_SIZE 9999
 
@@ -135,7 +135,7 @@ Node* copyNode(Node* node){
 }
 
 void assignParamsNameAndBind(struct Node* ids, struct Node* params, struct Node* func) {
-    /* sleep(1); */
+    
     switch(ids->val->type) {
         case EMPTY_TYPE:
             return;
@@ -150,15 +150,15 @@ void assignParamsNameAndBind(struct Node* ids, struct Node* params, struct Node*
 
             break;
         case IDS_TYPE:
-            params->left->val->cval = ids->left->val->cval;
+            params->right->val->cval = ids->right->val->cval;
             
             if(DEBUG_MODE) {
-                printf("to assign: %d (%d)\n", params->left->val->ival, params->left->val->type);
+                printf("to assign: %d (%d)\n", params->right->val->ival, params->right->val->type);
             }
 
-            bindParams(func, copyNode(params->left));
+            bindParams(func, copyNode(params->right));
 
-            assignParamsNameAndBind(ids->right, params->right, func);
+            assignParamsNameAndBind(ids->left, params->left, func);
             break;
         default:
             printf("unknown at bind, type: %d\n", ids->val->type);
@@ -415,23 +415,20 @@ void eval(Node* node, int type) {
             }
             break;
         case IF_TYPE:
-            printf("IF TYPE\n");
+            if(DEBUG_MODE){
+                printf("IF TYPE\n");
+            }
             eval(node->left, node->val->type);
-            printf("node->left, type=%d\n", node->left->val->type);
             if(node->left->val->type != BOOL_TYPE) yyerror("Type error");
             if(node->left->val->ival == 1){
-                printf("TRUE, %d\n", node->right->left->val->type);
+                
                 eval(node->right->left, node->right->val->type);
                 node->val->type = node->right->left->val->type;
                 node->val->ival = node->right->left->val->ival;
             } else {
-                printf("FALSE, %d\n", node->right->right->val->type);
                 eval(node->right->right, node->right->val->type);
                 node->val->type = node->right->right->val->type;
                 node->val->ival = node->right->right->val->ival;
-            }
-            if(DEBUG_MODE){
-                printf("IF_TYPE, VAL=%d\n", node->val->ival);
             }
             break;
              
@@ -473,20 +470,6 @@ void eval(Node* node, int type) {
             }
             newFunction(node->left->val->cval, node->right);
             break;
-        case FUN_TYPE:
-            /*
-                FUN_TYPE IDS BODY
-            */
-            if(DEBUG_MODE){
-                printf("EVAL FUNCTION \n");
-            }
-            /*
-            eval(node->right, node->val->type);
-            node->val->type = node->right->val->type;
-            node->val->ival = node->right->val->ival;
-            node->val->cval = node->right->val->cval;
-            */
-           break;
         case FUN_CALL:
             if(DEBUG_MODE){
                 printf("CALL A FUNCTION\n");
@@ -496,6 +479,7 @@ void eval(Node* node, int type) {
                 FUN_EXPR IDS BODY
                 bind(expr, ids, params)
             */
+            eval(node->left, node->val->type);
             if(node->left->val->type == FUN_NAME_TYPE){
                 /*
                     Function {
@@ -658,7 +642,9 @@ def_stmt:   '(' define VARIABLE expr ')'  {
                 }
             }
         ;
-VARIABLE:   ID  {char* temp = (char *)malloc(sizeof(char*)); strcpy(temp, $1); $$ = newNode(newElement(VARIABLE_TYPE, temp, 0), NULL, NULL);}
+VARIABLE:   ID  {
+                $$ = newNode(newElement(VARIABLE_TYPE, strdup($1), 0), NULL, NULL);
+            }
         ;
 
 FUN_expr:   '(' fun FUN_IDs FUN_Body ')' { 
@@ -687,9 +673,7 @@ PARAMs  :   PARAMs PARAM    {$$ = newNode(newElement(PARAMS_TYPE, NULL, 0), $1, 
 PARAM   :   expr    {$$ = $1;}
         ;
 FUN_Name:   ID      {
-                char* temp_id = (char*)malloc(sizeof(char));
-                strcpy(temp_id, $1);
-                $$ = newNode(newElement(FUN_NAME_TYPE, temp_id, 0), NULL, NULL);
+                $$ = newNode(newElement(FUN_NAME_TYPE, strdup($1), 0), NULL, NULL);
             }
         ;
 IF_expr :  '(' IF TEST_expr THEN_expr ELSE_expr ')' {
@@ -704,9 +688,7 @@ THEN_expr:  expr    {$$ = $1;}
 ELSE_expr:  expr    {$$ = $1;}
          ;
 IDs     :   IDs ID      {
-                char* temp_id = (char*)malloc(sizeof(char));
-                strcpy(temp_id, $2);
-                Node* temp = newNode(newElement(ID_TYPE, temp_id, 0), NULL, NULL);
+                Node* temp = newNode(newElement(ID_TYPE, strdup($2), 0), NULL, NULL);
                 $$ = newNode(newElement(IDS_TYPE, NULL, 0), $1, temp);
             }
         |   /* empty */ {$$ = newNode(newElement(EMPTY_TYPE, NULL, 0), NULL, NULL);}
