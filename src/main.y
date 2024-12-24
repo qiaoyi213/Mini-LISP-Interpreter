@@ -116,7 +116,7 @@ Element* find(Node** ids, Node** params, char* name){
         }
         Node* cParams = copyNode(*params);
         eval(cParams, FUN_CALL);
-        printf("FOUND PARAM %d\n", cParams->val->ival);
+        // printf("FOUND PARAM %d\n", cParams->val->ival);
         Element* temp = (Element*)malloc(sizeof(Element));
         temp->type = cParams->val->type;
         temp->ival = cParams->val->ival;
@@ -282,7 +282,9 @@ void eval(Node* node, int type) {
                 temp = node->left->right->val->ival;
                 eval(node->left, node->val->type);
                 node->val->type = BOOL_TYPE;
-                printf("A%d, %d\n", node->right->val->ival, temp);
+                if(DEBUG_MODE){
+                    printf("A%d, %d\n", node->right->val->ival, temp);
+                }
                 node->val->ival = (node->right->val->ival == temp) && node->left->val->ival;
             } else if(node->left->val->type != EXPRS_TYPE && node->right->val->type == EXPRS_TYPE){
                 eval(node->left, node->val->type);
@@ -290,18 +292,24 @@ void eval(Node* node, int type) {
                 temp = node->right->right->val->ival;
                 eval(node->right, node->val->type);
                 node->val->type = BOOL_TYPE;
-                printf("B%d, %d\n", node->left->val->ival, temp);
+                if(DEBUG_MODE){
+                    printf("B%d, %d\n", node->left->val->ival, temp);
+                }
                 node->val->ival = (node->left->val->ival == temp) && node->right->val->ival;
             } else if(node->left->val->type != EXPRS_TYPE && node->right->val->type != EXPRS_TYPE){
                 eval(node->left, node->val->type);
                 eval(node->right, node->val->type);
                 node->val->type = BOOL_TYPE;
-                printf("C%d, %d\n", node->left->val->ival, node->right->val->ival);
+                if(DEBUG_MODE){
+                    printf("C%d, %d\n", node->left->val->ival, node->right->val->ival);
+                }
                 node->val->ival = node->left->val->ival == node->right->val->ival;
             } else {
                 yyerror("UNKNOWN ERROR");
             }
-            printf("VAL=%d\n", node->val->ival);
+            if(DEBUG_MODE){
+                printf("VAL=%d\n", node->val->ival);
+            }
             break;
         case AND_TYPE:
             eval(node->left, node->val->type);
@@ -404,7 +412,7 @@ void eval(Node* node, int type) {
             */
 
             if(node->left->val->type == FUN_NAME_TYPE){
-                printf("FUN NAME %d\n", node->left->val->type);
+                // printf("FUN NAME %d\n", node->left->val->type);
                 for(int i=0;i<=top_variables;i++){
                     if(strcmp(variables[i]->val->cval, node->left->val->cval) == 0){
                         Node* temp = bind(variables[i]->right, variables[i]->left, node->right);
@@ -412,7 +420,9 @@ void eval(Node* node, int type) {
                         node->val->type = temp->val->type;
                         node->val->ival = temp->val->ival;
                         node->val->cval = temp->val->cval;
-                        printf("%d\n", temp->val->ival);
+                        if(DEBUG_MODE){
+                            printf("%d\n", temp->val->ival);
+                        }
                         break;
                     }
                 }
@@ -567,13 +577,9 @@ FUN_IDs :   '(' IDs ')'     {$$ = $2;}
 FUN_Body:   expr            {$$ = $1;}
         ;
 FUN_Call:   '(' FUN_expr PARAMs ')'     {
-                if(DEBUG_MODE){
-                    printf("FUN_Call\n");
-                    //printf("%d", $3->right->val->ival);
-                }
                 $$ = newNode(newElement(FUN_CALL, NULL, 0), $2, $3);
             }
-        |   '(' FUN_Name PARAMs ')'     {printf("CALL\n");$$ = newNode(newElement(FUN_CALL, NULL, 0), $2, $3);}
+        |   '(' FUN_Name PARAMs ')'     {$$ = newNode(newElement(FUN_CALL, NULL, 0), $2, $3);}
         ;
 PARAMs  :   PARAMs PARAM    {$$ = newNode(newElement(PARAMS_TYPE, NULL, 0), $1, $2);}
         |   /* empty */     {$$ = newNode(newElement(EMPTY_TYPE, NULL, 0), NULL, NULL);}
