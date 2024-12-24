@@ -72,8 +72,7 @@ typedef struct Function {
 
 Node* newNode(Element* val, Node* left, Node* right);
 Node* copyNode(Node* node);
-//Element* find(Node** ids, Node** params, char* name);
-//Node* bind(Node* expr, Node* ids, Node* params);
+Node* freeNode(Node* node);
 void dump(Node* node, int idx);
 void eval(Node* node, int type);
 void assignParamsNameAndBind(Node* ids, Node* params, Node* func);
@@ -213,11 +212,12 @@ void bindParams(struct Node* taskNode, struct Node* toReplace) {
     bindParams(taskNode->left, toReplace);
     bindParams(taskNode->right, toReplace);
 }
-void freeNode(Node** node) {
-    if(node == NULL) return;
-    freeNode(&((*node)->left));
-    freeNode(&((*node)->right));
+Node* freeNode(Node* node) {
+    if(node == NULL) return NULL;
+    freeNode(node->left);
+    freeNode(node->right);
     free(node);
+    return NULL;
 }
 void dump(Node* node, int idx){
     if(node == NULL)return;
@@ -228,11 +228,11 @@ void dump(Node* node, int idx){
     dump(node->right, idx+1);
 }
 void eval(Node* node, int type) {
-    if(DEBUG_MODE) {
-        printf("<--EVAL %d-->\n", node->val->type);
-    }
     if(node == NULL)  {
         return;
+    }
+    if(DEBUG_MODE){
+        printf("<--EVAL %d-->\n", node->val->type);
     }
     if(node->val->type == EXPRS_TYPE){
         if(DEBUG_MODE){
@@ -278,6 +278,8 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE) {
                 printf("PLUS_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
             break;
         case MINUS_TYPE:
             eval(node->left, node->val->type);
@@ -289,6 +291,8 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE) {
                 printf("MINUS_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
             break;
         case MULTIPLY_TYPE:
             eval(node->left, node->val->type);
@@ -300,6 +304,8 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("MULTIPLY_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
             break;
         case DIVIDE_TYPE:
             eval(node->left, node->val->type);
@@ -311,6 +317,8 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("DIVIDE_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
             break;
         case MOD_TYPE:
             eval(node->left, node->val->type);
@@ -322,6 +330,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("MOD_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case GREATER_TYPE:
             eval(node->left, node->val->type);
@@ -333,6 +344,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("GREATER_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case SMALLER_TYPE:
             eval(node->left, node->val->type);
@@ -344,6 +358,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("SMALLER_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case EQUAL_TYPE:
             /*
@@ -382,6 +399,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case AND_TYPE:
             eval(node->left, node->val->type);
@@ -393,6 +413,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("AND_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case OR_TYPE:
             eval(node->left, node->val->type);
@@ -404,6 +427,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("OR_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case NOT_TYPE:
             eval(node->left, node->val->type);
@@ -413,6 +439,9 @@ void eval(Node* node, int type) {
             if(DEBUG_MODE){
                 printf("NOT_TYPE, VAL=%d\n", node->val->ival);
             }
+            node->left = freeNode(node->left);
+            node->right = freeNode(node->right);
+ 
             break;
         case IF_TYPE:
             if(DEBUG_MODE){
@@ -440,7 +469,6 @@ void eval(Node* node, int type) {
             }
             node->right->val->cval = node->left->val->cval;
             variables[++top_variables] = copyNode(node->right);
-            
             if(DEBUG_MODE){
                 printf("DEFINE VARIABLE %s\n", node->left->val->cval);
                 printf("VARIABLE TYPE %d\n", node->right->val->type);
@@ -453,22 +481,15 @@ void eval(Node* node, int type) {
             for(int i=0;i<=top_variables;i++){
                 if(strcmp(variables[i]->val->cval,node->val->cval) == 0) {
                     Node* temp = copyNode(variables[i]);
-                    eval(temp, node->val->type);
                     node->val->type = temp->val->type;
                     node->val->ival = temp->val->ival;
                     node->val->cval = temp->val->cval;
+                    node->left = copyNode(temp->left);
+                    node->right = copyNode(temp->right);
+                    eval(node, node->val->type);
                     break;
                 }
             }
-            break;
-        case DEFINE_FUNCTION_TYPE:
-            /*
-                DFT VARIABLE EXPR
-            */
-            if(DEBUG_MODE){
-                printf("DEFINE A FUNCTION\n");
-            }
-            newFunction(node->left->val->cval, node->right);
             break;
         case FUN_CALL:
             if(DEBUG_MODE){
@@ -477,34 +498,19 @@ void eval(Node* node, int type) {
             /* 
                 NODE FUN_EXPR PARAMS
                 FUN_EXPR IDS BODY
-                bind(expr, ids, params)
             */
             eval(node->left, node->val->type);
-            if(node->left->val->type == FUN_NAME_TYPE){
-                /*
-                    Function {
-                        char* name;
-                        Node* params;
-                        Node* body; -> fun_Expr
-                    }
-                */
-                Function* temp = getFunction(node->left->val->cval);
-                assignParamsNameAndBind(temp->params, node->right, temp->body);
-                eval(temp->body, temp->body->val->type);
-                node->val->type = temp->body->val->type;
-                node->val->ival = temp->body->val->ival;
-                node->val->cval = temp->body->val->cval;
-                node->left = copyNode(temp->body->left);
-                node->right = copyNode(temp->body->right);
-            } else {
-                assignParamsNameAndBind(node->left->left, node->right, node->left->right);
-                eval(node->left->right, node->left->val->type);
-                node->val->type = node->left->right->val->type;
-                node->val->ival = node->left->right->val->ival;
-                node->val->cval = node->left->right->val->cval;
+            assignParamsNameAndBind(node->left->left, node->right, node->left->right);
+            eval(node->left->right, node->left->val->type);
+
+            node->val->type = node->left->right->val->type;
+            node->val->ival = node->left->right->val->ival;
+            node->val->cval = node->left->right->val->cval;
+            if(node->left->right->val->type == FUN_TYPE){
                 node->left = copyNode(node->left->right->left);
                 node->right = copyNode(node->left->right->right);
-            }      
+                eval(node, node->val->type);
+            }
             break;
         default:
             if(DEBUG_MODE) {
@@ -635,11 +641,7 @@ NOT_OP  :   '(' not expr ')'    {$$ = newNode(newElement(NOT_TYPE, NULL, 0), $3,
         ;
 
 def_stmt:   '(' define VARIABLE expr ')'  {
-                if($4->val->type == FUN_TYPE){
-                    $$ = newNode(newElement(DEFINE_FUNCTION_TYPE, NULL, 0), $3, $4);
-                } else {
-                    $$ = newNode(newElement(DEFINE_VARIABLE_TYPE, NULL, 0), $3, $4);
-                }
+                $$ = newNode(newElement(DEFINE_VARIABLE_TYPE, NULL, 0), $3, $4);
             }
         ;
 VARIABLE:   ID  {
@@ -657,13 +659,7 @@ FUN_IDs :   '(' IDs ')'     {$$ = $2;}
 
 FUN_Body:   expr            {$$ = $1;}
         ;
-FUN_Call:   '(' FUN_expr PARAMs ')'     {
-                $$ = newNode(newElement(FUN_CALL, NULL, 0), $2, $3);
-            }
-        |   '(' FUN_Name PARAMs ')'     {
-                if(DEBUG_MODE){
-                    printf("CALL FUNNAME PARAMS TYPE= %d", $3->val->type);
-                }
+FUN_Call:   '(' expr PARAMs ')'     {
                 $$ = newNode(newElement(FUN_CALL, NULL, 0), $2, $3);
             }
         ;
