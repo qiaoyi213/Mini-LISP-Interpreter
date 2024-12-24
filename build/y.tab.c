@@ -75,7 +75,7 @@
 // define type table
 #define False 0
 #define True 1
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 #define MAX_SIZE 9999
 
@@ -150,6 +150,11 @@ Function* newFunction(char* name, Node params[], Node** body){
     temp->name = name;
     return temp;
 }
+Node* newNode(Element* val, Node* left, Node* right);
+Node* copyNode(Node* node);
+Element* find(Node** ids, Node** params, char* name);
+Node* bind(Node* expr, Node* ids, Node* params);
+void eval(Node* node, int type);
 
 Node* newNode(Element* val, Node* left, Node* right) {
     Node* temp = (Node *)malloc(sizeof(Node));
@@ -179,10 +184,13 @@ Element* find(Node** ids, Node** params, char* name){
             printf("FOUND \n");
             printf("TYPE=%d\n", (*params)->val->type);
         }
+        Node* cParams = copyNode(*params);
+        eval(cParams, FUN_CALL);
+        printf("FOUND PARAM %d\n", cParams->val->ival);
         Element* temp = (Element*)malloc(sizeof(Element));
-        temp->type = (*params)->val->type;
-        temp->ival = (*params)->val->ival;
-        temp->cval = (*params)->val->cval;
+        temp->type = cParams->val->type;
+        temp->ival = cParams->val->ival;
+        temp->cval = cParams->val->cval;
         return temp;
     }
     Element* left = find(&((*ids)->left), &((*params)->left), name);
@@ -200,7 +208,6 @@ Node* bind(Node* expr, Node* ids, Node* params) {
     } 
 
     if(expr->val->type == VARIABLE_TYPE){
-        printf("VARIABLE%s\n", expr->val->cval);
         expr->val = find(&ids, &params, expr->val->cval);
     }
     expr->left = bind(expr->left, ids, params);
@@ -292,6 +299,17 @@ void eval(Node* node, int type) {
             node->val->type = INT_TYPE;
             if(DEBUG_MODE){
                 printf("DIVIDE_TYPE, VAL=%d\n", node->val->ival);
+            }
+            break;
+        case MOD_TYPE:
+            eval(node->left, node->val->type);
+            eval(node->right, node->val->type);
+            if(node->left->val->type != INT_TYPE) yyerror("Type error");
+            if(node->right->val->type != INT_TYPE) yyerror("Type error");
+            node->val->ival = node->left->val->ival % node->right->val->ival;
+            node->val->type = INT_TYPE;
+            if(DEBUG_MODE){
+                printf("MOD_TYPE, VAL=%d\n", node->val->ival);
             }
             break;
         case GREATER_TYPE:
@@ -432,26 +450,34 @@ void eval(Node* node, int type) {
             }
             break;
         case FUN_TYPE:
+            /*
+                FUN_TYPE IDS BODY
+            */
             if(DEBUG_MODE){
                 printf("EVAL FUNCTION \n");
             }
+            /*
+            eval(node->right, node->val->type);
+            node->val->type = node->right->val->type;
+            node->val->ival = node->right->val->ival;
+            node->val->cval = node->right->val->cval;
+            */
            break;
         case FUN_CALL:
             if(DEBUG_MODE){
-                printf("CALL A FUNCTION \n");
-                printf("LEFT TYPE%d\n", node->left->val->type);
+                printf("CALL A FUNCTION %d\n", node->left->val->type);
             }
             /* 
                 NODE FUN_EXPR PARAMS
                 FUN_EXPR IDS BODY
                 bind(expr, ids, params)
             */
+
             if(node->left->val->type == FUN_NAME_TYPE){
-                printf("FUN NAME %s\n", node->left->val->cval);
+                printf("FUN NAME %d\n", node->left->val->type);
                 for(int i=0;i<=top_variables;i++){
                     if(strcmp(variables[i]->val->cval, node->left->val->cval) == 0){
                         Node* temp = bind(variables[i]->right, variables[i]->left, node->right);
-
                         eval(temp, type);
                         node->val->type = temp->val->type;
                         node->val->ival = temp->val->ival;
@@ -471,7 +497,7 @@ void eval(Node* node, int type) {
     }
 }
 
-#line 475 "y.tab.c"
+#line 501 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -552,13 +578,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 404 "src/main.y"
+#line 430 "src/main.y"
 
     char* str;
     int num;
     struct Node* node;
 
-#line 562 "y.tab.c"
+#line 588 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -1022,12 +1048,12 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   456,   456,   459,   460,   463,   464,   465,   468,   469,
-     470,   471,   472,   473,   474,   475,   479,   480,   483,   484,
-     485,   486,   487,   488,   489,   490,   493,   495,   497,   499,
-     501,   503,   505,   507,   510,   511,   512,   514,   516,   518,
-     521,   525,   528,   538,   541,   543,   550,   552,   553,   555,
-     557,   563,   565,   567,   569,   571,   577,   580,   581
+       0,   482,   482,   485,   486,   489,   490,   491,   494,   495,
+     496,   497,   498,   499,   500,   501,   505,   506,   509,   510,
+     511,   512,   513,   514,   515,   516,   519,   521,   523,   525,
+     527,   529,   531,   533,   536,   537,   538,   540,   542,   544,
+     547,   551,   554,   564,   567,   569,   576,   578,   579,   581,
+     583,   589,   591,   593,   595,   597,   603,   606,   607
 };
 #endif
 
@@ -1668,373 +1694,373 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: stmts  */
-#line 456 "src/main.y"
+#line 482 "src/main.y"
                     {root = (yyvsp[0].node);}
-#line 1674 "y.tab.c"
+#line 1700 "y.tab.c"
     break;
 
   case 3: /* stmts: stmts stmt  */
-#line 459 "src/main.y"
+#line 485 "src/main.y"
                         {(yyval.node) = newNode(newElement(EMPTY_TYPE, NULL,0), (yyvsp[-1].node), (yyvsp[0].node));}
-#line 1680 "y.tab.c"
+#line 1706 "y.tab.c"
     break;
 
   case 4: /* stmts: stmt  */
-#line 460 "src/main.y"
+#line 486 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1686 "y.tab.c"
+#line 1712 "y.tab.c"
     break;
 
   case 5: /* stmt: expr  */
-#line 463 "src/main.y"
+#line 489 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1692 "y.tab.c"
+#line 1718 "y.tab.c"
     break;
 
   case 6: /* stmt: def_stmt  */
-#line 464 "src/main.y"
+#line 490 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1698 "y.tab.c"
+#line 1724 "y.tab.c"
     break;
 
   case 7: /* stmt: print_stmt  */
-#line 465 "src/main.y"
+#line 491 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1704 "y.tab.c"
+#line 1730 "y.tab.c"
     break;
 
   case 8: /* expr: NUM_OP  */
-#line 468 "src/main.y"
+#line 494 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1710 "y.tab.c"
+#line 1736 "y.tab.c"
     break;
 
   case 9: /* expr: LOGICAL_OP  */
-#line 469 "src/main.y"
+#line 495 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1716 "y.tab.c"
+#line 1742 "y.tab.c"
     break;
 
   case 10: /* expr: FUN_expr  */
-#line 470 "src/main.y"
+#line 496 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1722 "y.tab.c"
+#line 1748 "y.tab.c"
     break;
 
   case 11: /* expr: FUN_Call  */
-#line 471 "src/main.y"
+#line 497 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1728 "y.tab.c"
+#line 1754 "y.tab.c"
     break;
 
   case 12: /* expr: IF_expr  */
-#line 472 "src/main.y"
+#line 498 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1734 "y.tab.c"
+#line 1760 "y.tab.c"
     break;
 
   case 13: /* expr: VARIABLE  */
-#line 473 "src/main.y"
+#line 499 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1740 "y.tab.c"
+#line 1766 "y.tab.c"
     break;
 
   case 14: /* expr: number  */
-#line 474 "src/main.y"
+#line 500 "src/main.y"
                         {(yyval.node) = newNode(newElement(INT_TYPE, NULL, (yyvsp[0].num)), NULL, NULL);}
-#line 1746 "y.tab.c"
+#line 1772 "y.tab.c"
     break;
 
   case 15: /* expr: bool_val  */
-#line 475 "src/main.y"
+#line 501 "src/main.y"
                         {(yyval.node) = newNode(newElement(BOOL_TYPE, NULL, (yyvsp[0].num)),NULL,NULL);}
-#line 1752 "y.tab.c"
+#line 1778 "y.tab.c"
     break;
 
   case 16: /* print_stmt: '(' print_bool expr ')'  */
-#line 479 "src/main.y"
+#line 505 "src/main.y"
                                          {(yyval.node) = newNode(newElement(PRINT_BOOL_TYPE, NULL,0), (yyvsp[-1].node), NULL);}
-#line 1758 "y.tab.c"
+#line 1784 "y.tab.c"
     break;
 
   case 17: /* print_stmt: '(' print_num expr ')'  */
-#line 480 "src/main.y"
+#line 506 "src/main.y"
                                        {(yyval.node) = newNode(newElement(PRINT_NUM_TYPE, NULL, 0), (yyvsp[-1].node), NULL);}
-#line 1764 "y.tab.c"
+#line 1790 "y.tab.c"
     break;
 
   case 18: /* NUM_OP: PLUS  */
-#line 483 "src/main.y"
+#line 509 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1770 "y.tab.c"
+#line 1796 "y.tab.c"
     break;
 
   case 19: /* NUM_OP: MINUS  */
-#line 484 "src/main.y"
+#line 510 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1776 "y.tab.c"
+#line 1802 "y.tab.c"
     break;
 
   case 20: /* NUM_OP: MULTIPLY  */
-#line 485 "src/main.y"
+#line 511 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1782 "y.tab.c"
+#line 1808 "y.tab.c"
     break;
 
   case 21: /* NUM_OP: DIVIDE  */
-#line 486 "src/main.y"
+#line 512 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1788 "y.tab.c"
+#line 1814 "y.tab.c"
     break;
 
   case 22: /* NUM_OP: MODULUS  */
-#line 487 "src/main.y"
+#line 513 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1794 "y.tab.c"
+#line 1820 "y.tab.c"
     break;
 
   case 23: /* NUM_OP: GREATER  */
-#line 488 "src/main.y"
+#line 514 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1800 "y.tab.c"
+#line 1826 "y.tab.c"
     break;
 
   case 24: /* NUM_OP: SMALLER  */
-#line 489 "src/main.y"
+#line 515 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1806 "y.tab.c"
+#line 1832 "y.tab.c"
     break;
 
   case 25: /* NUM_OP: EQUAL  */
-#line 490 "src/main.y"
+#line 516 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 1812 "y.tab.c"
+#line 1838 "y.tab.c"
     break;
 
   case 26: /* PLUS: '(' '+' expr exprs ')'  */
-#line 493 "src/main.y"
+#line 519 "src/main.y"
                                     {(yyval.node) = newNode(newElement(PLUS_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1818 "y.tab.c"
+#line 1844 "y.tab.c"
     break;
 
   case 27: /* MINUS: '(' '-' expr expr ')'  */
-#line 495 "src/main.y"
+#line 521 "src/main.y"
                                     {(yyval.node) = newNode(newElement(MINUS_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1824 "y.tab.c"
+#line 1850 "y.tab.c"
     break;
 
   case 28: /* MULTIPLY: '(' '*' expr exprs ')'  */
-#line 497 "src/main.y"
+#line 523 "src/main.y"
                                     {(yyval.node) = newNode(newElement(MULTIPLY_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1830 "y.tab.c"
+#line 1856 "y.tab.c"
     break;
 
   case 29: /* DIVIDE: '(' '/' expr expr ')'  */
-#line 499 "src/main.y"
+#line 525 "src/main.y"
                                     {(yyval.node) = newNode(newElement(DIVIDE_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1836 "y.tab.c"
+#line 1862 "y.tab.c"
     break;
 
   case 30: /* MODULUS: '(' mod expr expr ')'  */
-#line 501 "src/main.y"
+#line 527 "src/main.y"
                                     {(yyval.node) = newNode(newElement(MOD_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1842 "y.tab.c"
+#line 1868 "y.tab.c"
     break;
 
   case 31: /* GREATER: '(' '>' expr expr ')'  */
-#line 503 "src/main.y"
+#line 529 "src/main.y"
                                     {(yyval.node) = newNode(newElement(GREATER_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1848 "y.tab.c"
+#line 1874 "y.tab.c"
     break;
 
   case 32: /* SMALLER: '(' '<' expr expr ')'  */
-#line 505 "src/main.y"
+#line 531 "src/main.y"
                                     {(yyval.node) = newNode(newElement(SMALLER_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1854 "y.tab.c"
+#line 1880 "y.tab.c"
     break;
 
   case 33: /* EQUAL: '(' '=' expr exprs ')'  */
-#line 507 "src/main.y"
+#line 533 "src/main.y"
                                     {(yyval.node) = newNode(newElement(EQUAL_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1860 "y.tab.c"
+#line 1886 "y.tab.c"
     break;
 
   case 34: /* LOGICAL_OP: AND_OP  */
-#line 510 "src/main.y"
+#line 536 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 1866 "y.tab.c"
+#line 1892 "y.tab.c"
     break;
 
   case 35: /* LOGICAL_OP: OR_OP  */
-#line 511 "src/main.y"
+#line 537 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 1872 "y.tab.c"
+#line 1898 "y.tab.c"
     break;
 
   case 36: /* LOGICAL_OP: NOT_OP  */
-#line 512 "src/main.y"
+#line 538 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 1878 "y.tab.c"
-    break;
-
-  case 37: /* AND_OP: '(' and expr exprs ')'  */
-#line 514 "src/main.y"
-                                    {(yyval.node) = newNode(newElement(AND_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1884 "y.tab.c"
-    break;
-
-  case 38: /* OR_OP: '(' or expr exprs ')'  */
-#line 516 "src/main.y"
-                                    {(yyval.node) = newNode(newElement(OR_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1890 "y.tab.c"
-    break;
-
-  case 39: /* NOT_OP: '(' not expr ')'  */
-#line 518 "src/main.y"
-                                {(yyval.node) = newNode(newElement(NOT_TYPE, NULL, 0), (yyvsp[-1].node), NULL);}
-#line 1896 "y.tab.c"
-    break;
-
-  case 40: /* def_stmt: '(' define VARIABLE expr ')'  */
-#line 521 "src/main.y"
-                                          {
-                (yyval.node) = newNode(newElement(DEFINE_VARIABLE_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));
-            }
 #line 1904 "y.tab.c"
     break;
 
-  case 41: /* VARIABLE: ID  */
-#line 525 "src/main.y"
-                {char* temp = (char *)malloc(sizeof(char*)); strcpy(temp, (yyvsp[0].str)); (yyval.node) = newNode(newElement(VARIABLE_TYPE, temp, 0), NULL, NULL);}
+  case 37: /* AND_OP: '(' and expr exprs ')'  */
+#line 540 "src/main.y"
+                                    {(yyval.node) = newNode(newElement(AND_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
 #line 1910 "y.tab.c"
     break;
 
+  case 38: /* OR_OP: '(' or expr exprs ')'  */
+#line 542 "src/main.y"
+                                    {(yyval.node) = newNode(newElement(OR_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
+#line 1916 "y.tab.c"
+    break;
+
+  case 39: /* NOT_OP: '(' not expr ')'  */
+#line 544 "src/main.y"
+                                {(yyval.node) = newNode(newElement(NOT_TYPE, NULL, 0), (yyvsp[-1].node), NULL);}
+#line 1922 "y.tab.c"
+    break;
+
+  case 40: /* def_stmt: '(' define VARIABLE expr ')'  */
+#line 547 "src/main.y"
+                                          {
+                (yyval.node) = newNode(newElement(DEFINE_VARIABLE_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));
+            }
+#line 1930 "y.tab.c"
+    break;
+
+  case 41: /* VARIABLE: ID  */
+#line 551 "src/main.y"
+                {char* temp = (char *)malloc(sizeof(char*)); strcpy(temp, (yyvsp[0].str)); (yyval.node) = newNode(newElement(VARIABLE_TYPE, temp, 0), NULL, NULL);}
+#line 1936 "y.tab.c"
+    break;
+
   case 42: /* FUN_expr: '(' fun FUN_IDs FUN_Body ')'  */
-#line 528 "src/main.y"
+#line 554 "src/main.y"
                                          { 
                 if(DEBUG_MODE){
                     printf("DEFINE A FUNCTION\n");
-                    printf("IDs \n");
-                    //printf("%s", $3->right->val->cval);
+                    printf("IDs ");
+                    printf("%d\n", (yyvsp[-1].node)->val->type);
                 }
                 (yyval.node) = newNode(newElement(FUN_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));
             }
-#line 1923 "y.tab.c"
+#line 1949 "y.tab.c"
     break;
 
   case 43: /* FUN_IDs: '(' IDs ')'  */
-#line 538 "src/main.y"
+#line 564 "src/main.y"
                             {(yyval.node) = (yyvsp[-1].node);}
-#line 1929 "y.tab.c"
+#line 1955 "y.tab.c"
     break;
 
   case 44: /* FUN_Body: expr  */
-#line 541 "src/main.y"
+#line 567 "src/main.y"
                             {(yyval.node) = (yyvsp[0].node);}
-#line 1935 "y.tab.c"
+#line 1961 "y.tab.c"
     break;
 
   case 45: /* FUN_Call: '(' FUN_expr PARAMs ')'  */
-#line 543 "src/main.y"
+#line 569 "src/main.y"
                                         {
                 if(DEBUG_MODE){
-                    printf("PARAMS\n");
+                    printf("FUN_Call\n");
                     //printf("%d", $3->right->val->ival);
                 }
                 (yyval.node) = newNode(newElement(FUN_CALL, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));
             }
-#line 1947 "y.tab.c"
+#line 1973 "y.tab.c"
     break;
 
   case 46: /* FUN_Call: '(' FUN_Name PARAMs ')'  */
-#line 550 "src/main.y"
-                                        {(yyval.node) = newNode(newElement(FUN_CALL, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
-#line 1953 "y.tab.c"
+#line 576 "src/main.y"
+                                        {printf("CALL\n");(yyval.node) = newNode(newElement(FUN_CALL, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node));}
+#line 1979 "y.tab.c"
     break;
 
   case 47: /* PARAMs: PARAMs PARAM  */
-#line 552 "src/main.y"
+#line 578 "src/main.y"
                             {(yyval.node) = newNode(newElement(PARAMS_TYPE, NULL, 0), (yyvsp[-1].node), (yyvsp[0].node));}
-#line 1959 "y.tab.c"
+#line 1985 "y.tab.c"
     break;
 
   case 48: /* PARAMs: %empty  */
-#line 553 "src/main.y"
+#line 579 "src/main.y"
                             {(yyval.node) = newNode(newElement(EMPTY_TYPE, NULL, 0), NULL, NULL);}
-#line 1965 "y.tab.c"
+#line 1991 "y.tab.c"
     break;
 
   case 49: /* PARAM: expr  */
-#line 555 "src/main.y"
+#line 581 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 1971 "y.tab.c"
+#line 1997 "y.tab.c"
     break;
 
   case 50: /* FUN_Name: ID  */
-#line 557 "src/main.y"
+#line 583 "src/main.y"
                     {
                 char* temp_id = (char*)malloc(sizeof(char));
                 strcpy(temp_id, (yyvsp[0].str));
                 (yyval.node) = newNode(newElement(FUN_NAME_TYPE, temp_id, 0), NULL, NULL);
             }
-#line 1981 "y.tab.c"
+#line 2007 "y.tab.c"
     break;
 
   case 51: /* IF_expr: '(' IF TEST_expr THEN_expr ELSE_expr ')'  */
-#line 563 "src/main.y"
+#line 589 "src/main.y"
                                                     {Node* expr_node = newNode(newElement(THEN_ELSE_TYPE, NULL, 0), (yyvsp[-2].node), (yyvsp[-1].node)); (yyval.node) = newNode(newElement(IF_TYPE, NULL, 0), (yyvsp[-3].node), expr_node);}
-#line 1987 "y.tab.c"
+#line 2013 "y.tab.c"
     break;
 
   case 52: /* TEST_expr: expr  */
-#line 565 "src/main.y"
+#line 591 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 1993 "y.tab.c"
+#line 2019 "y.tab.c"
     break;
 
   case 53: /* THEN_expr: expr  */
-#line 567 "src/main.y"
+#line 593 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 1999 "y.tab.c"
+#line 2025 "y.tab.c"
     break;
 
   case 54: /* ELSE_expr: expr  */
-#line 569 "src/main.y"
+#line 595 "src/main.y"
                     {(yyval.node) = (yyvsp[0].node);}
-#line 2005 "y.tab.c"
+#line 2031 "y.tab.c"
     break;
 
   case 55: /* IDs: IDs ID  */
-#line 571 "src/main.y"
+#line 597 "src/main.y"
                         {
                 char* temp_id = (char*)malloc(sizeof(char));
                 strcpy(temp_id, (yyvsp[0].str));
                 Node* temp = newNode(newElement(ID_TYPE, temp_id, 0), NULL, NULL);
                 (yyval.node) = newNode(newElement(IDS_TYPE, NULL, 0), (yyvsp[-1].node), temp);
             }
-#line 2016 "y.tab.c"
+#line 2042 "y.tab.c"
     break;
 
   case 56: /* IDs: %empty  */
-#line 577 "src/main.y"
+#line 603 "src/main.y"
                         {(yyval.node) = newNode(newElement(EMPTY_TYPE, NULL, 0), NULL, NULL);}
-#line 2022 "y.tab.c"
+#line 2048 "y.tab.c"
     break;
 
   case 57: /* exprs: exprs expr  */
-#line 580 "src/main.y"
+#line 606 "src/main.y"
                         {(yyval.node) = newNode(newElement(EXPRS_TYPE, NULL, 0), (yyvsp[-1].node), (yyvsp[0].node));}
-#line 2028 "y.tab.c"
+#line 2054 "y.tab.c"
     break;
 
   case 58: /* exprs: expr  */
-#line 581 "src/main.y"
+#line 607 "src/main.y"
                         {(yyval.node) = (yyvsp[0].node);}
-#line 2034 "y.tab.c"
+#line 2060 "y.tab.c"
     break;
 
 
-#line 2038 "y.tab.c"
+#line 2064 "y.tab.c"
 
       default: break;
     }
@@ -2227,7 +2253,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 585 "src/main.y"
+#line 611 "src/main.y"
 
 void yyerror(const char *s) {
     printf("syntax error ::%s \n", s);
