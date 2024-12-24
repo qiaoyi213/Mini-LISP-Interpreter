@@ -496,13 +496,14 @@ void eval(Node* node, int type) {
                 printf("CALL A FUNCTION\n");
             }
             /* 
-                NODE FUN_EXPR PARAMS
+                NODE expr PARAMS
                 FUN_EXPR IDS BODY
             */
             eval(node->left, node->val->type);
+            // fun params
             assignParamsNameAndBind(node->left->left, node->right, node->left->right);
+            // fun (ids, body)
             eval(node->left->right, node->left->val->type);
-
             node->val->type = node->left->right->val->type;
             node->val->ival = node->left->right->val->ival;
             node->val->cval = node->left->right->val->cval;
@@ -556,7 +557,6 @@ void eval(Node* node, int type) {
 %type <node> FUN_expr
 %type <node> FUN_Call
 %type <node> FUN_Body
-%type <node> FUN_Name
 %type <node> FUN_IDs
 %type <node> IF_expr
 %type <node> TEST_expr
@@ -667,10 +667,6 @@ PARAMs  :   PARAMs PARAM    {$$ = newNode(newElement(PARAMS_TYPE, NULL, 0), $1, 
         |   /* empty */     {$$ = newNode(newElement(EMPTY_TYPE, NULL, 0), NULL, NULL);}
         ;
 PARAM   :   expr    {$$ = $1;}
-        ;
-FUN_Name:   ID      {
-                $$ = newNode(newElement(FUN_NAME_TYPE, strdup($1), 0), NULL, NULL);
-            }
         ;
 IF_expr :  '(' IF TEST_expr THEN_expr ELSE_expr ')' {
                 Node* expr_node = newNode(newElement(THEN_ELSE_TYPE, NULL, 0), $4, $5); 
