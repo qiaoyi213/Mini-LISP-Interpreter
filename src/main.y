@@ -64,11 +64,6 @@ typedef struct Node {
     struct Node* right;
 } Node;
 
-typedef struct Function {
-    char* name;
-    struct Node* params;
-    struct Node* body;
-} Function;
 
 Node* newNode(Element* val, Node* left, Node* right);
 Node* copyNode(Node* node);
@@ -83,33 +78,6 @@ Node* variables[MAX_SIZE];
 int top_variables = -1;
 
 
-Function* functions[MAX_SIZE];
-int top_functions = -1;
-
-
-Function* newFunction(char* name, Node* func){
-    Function* temp = (Function *)malloc(sizeof(Function));
-    temp->name = name;
-    temp->params = func->left;
-    temp->body = func->right;
-    functions[++top_functions] = temp;
-    return temp;
-}
-
-Function* getFunction(char* name) {
-    for(int i = 0; i <= top_functions; i++) {
-        if(strcmp(functions[i]->name, name) == 0) {
-            Function* result = (Function *) malloc(sizeof(Function));
-
-            result->name = strdup(functions[i]->name);
-            result->params = copyNode(functions[i]->params);
-            result->body = copyNode(functions[i]->body);
-
-            return result;
-        }
-    }
-    return NULL;
-}
 
 Node* newNode(Element* val, Node* left, Node* right) {
     Node* temp = (Node *)malloc(sizeof(Node));
