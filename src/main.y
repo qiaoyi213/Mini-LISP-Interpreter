@@ -8,7 +8,7 @@
 #define DEBUG_MODE 0
 
 #define MAX_SIZE 9999
-
+#define MAX_ENV 999
 #define BOOL_TYPE 0
 #define INT_TYPE 1
 #define STR_TYPE 2
@@ -77,6 +77,80 @@ Node* root;
 Node* variables[MAX_SIZE];
 int top_variables = -1;
 
+typedef struct Environment{
+    Node* variables[MAX_SIZE]; /* 這層環境中的「已定義變數」 */
+    int top;                   /* 在這層 environment 已存多少變數 */
+} Environment;
+
+/* 環境堆疊 */
+Environment envStack[MAX_ENV];
+int envTop = 0; /* 0 代表全域環境 */
+
+void initEnvironment() {
+    for(int i=0;i<MAX_ENV;i++){
+        envStack[i].top = -1;
+    }
+    /* 全域環境初始化 */
+    envStack[0].top = -1;
+}
+
+/* push: 進入新函式時複製上一層環境 */
+void pushEnvironment() {
+    if(envTop+1 >= MAX_ENV){
+        printf("ERROR: environment stack overflow.\n");
+        exit(1);
+    }
+    envTop++;
+    /* 複製上一層 */
+    int prev = envTop-1;
+    envStack[envTop].top = envStack[prev].top;
+    for(int i=0;i<= envStack[prev].top; i++){
+        envStack[envTop].variables[i] = envStack[prev].variables[i];
+    }
+}
+
+/* pop: 離開函式 */
+void popEnvironment() {
+    if(envTop <= 0){
+        /* 不能 pop global */
+        envTop = 0;
+        return;
+    }
+    envTop--;
+}
+
+/* 在當前層 (envStack[envTop]) 新增一個變數 */
+void defineVariable(Node* node) {
+    /* node->left: VARIABLE, node->right: expr's AST */
+    Environment* env = &envStack[envTop];
+
+    // 確認是否重複定義
+    for(int i=0; i<=env->top; i++){
+        if(strcmp(env->variables[i]->val->cval, node->left->val->cval)==0){
+            printf("ERROR: variable redefinition '%s'\n", node->left->val->cval);
+            exit(1);
+        }
+    }
+    // 新增
+    env->top++;
+    env->variables[env->top] = node->right; /* 直接指向 AST, or copyNode(...) */
+    /* 這裡順手把 name 放在 node->right->val->cval，以便之後 lookup */
+    node->right->val->cval = strdup(node->left->val->cval);
+}
+
+/* 從當前環境往外層找，取得同名變數 AST */
+Node* lookupVariable(const char* name) {
+    /* 從 envTop 往下找 */
+    for(int i=envTop; i>=0; i--){
+        Environment* env = &envStack[i];
+        for(int j=0; j<=env->top; j++){
+            if(strcmp(env->variables[j]->val->cval, name)==0){
+                return env->variables[j];
+            }
+        }
+    }
+    return NULL; /* not found */
+}
 
 
 Node* newNode(Element* val, Node* left, Node* right) {
