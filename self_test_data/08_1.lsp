@@ -1,5 +1,4 @@
-(define foo (fun (y) (+ y 1)))
+(define foo
+  (fun (x y z) (+ x y (* y z))))
 
-(define foo-z (fun () 5))
-
-(print-num (foo (foo-z)))
+(print-num (foo 10 9 8))

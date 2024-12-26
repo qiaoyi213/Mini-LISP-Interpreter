@@ -1,6 +1,6 @@
-(define iseven
-  (fun (n)
-    (= (mod n 2) 0)))
+(print-num (mod 23 (+ 15 -5 -2)))
 
-(print-bool (iseven 7))
-(print-bool (iseven 4))
+(print-num (* (/ 2 -3) 7))
+
+(print-num (- (+ 3 5 2 (- 1 6) 3 (/ 1 2) (mod 3 5))
+              5))

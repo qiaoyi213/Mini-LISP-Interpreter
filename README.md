@@ -2,6 +2,16 @@
 
 This is an mini lisp interpreter.
 
+## How to run
+
+You can just run the code below in your shell. The script would compile the file and run it.
+
+```
+./run.sh
+```
+
+Or, you can compile `src/main.l` and `src/main.y` by yourself to run it.
+
 ## Todo
 
 - [x] Syntax Validation Print “syntax error” when parsing invalid syntax
@@ -11,8 +21,8 @@ This is an mini lisp interpreter.
 - [x] if Expression Implement if expression
 - [x] Variable Definition Able to define a variable
 - [x] Function Able to declare and call an anonymous function
-- [ ] Named Function Able to declare and call a named function
-- [ ] Recursion Support recursive function call
+- [x] Named Function Able to declare and call a named function
+- [x] Recursion Support recursive function call
 - [ ] Type Checking Print error messages for type errors
 - [ ] Nested Function Nested function (static scope)
 - [ ] First-class Function Able to pass functions, support closure
@@ -60,4 +70,5 @@ For an input like `(= a b c d)`, the parsing result would resemble the tree stru
     b    c
 ```
 
-The evaluation logic ensures that all elements are compared in sequence, such that the result of `(= a b c d)` is equivalent to: `(a == d) && ((d == c) && (b == c))` which is equivalent to `(a == d == c == b)`.
+The evaluation logic ensures that all elements are compared in sequence, such that the result of `(= a b c d)` is equivalent to:
+`(a == d) && ((d == c) && (b == c))` which is equivalent to `(a == d == c == b)`.

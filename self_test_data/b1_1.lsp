@@ -1,5 +1,17 @@
-(define f
-(fun (x) (if (= x 1)
-    1
-        (* x (f (- x 1))))))
-(print-num (f 4))
+(define fact
+  (fun (n) (if (< n 3) n
+               (* n (fact (- n 1))))))
+
+(print-num (fact 11))
+(print-num (fact 12))
+(print-num (fact 13))
+
+(define fib (fun (x)
+  (if (< x 2) x (+
+                 (fib (- x 1))
+                 (fib (- x 2))))))
+
+(print-num (fib 2))
+(print-num (fib 4))
+(print-num (fib 6))
+(print-num (fib 11))
